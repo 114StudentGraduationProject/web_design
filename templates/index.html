@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Network Monitoring Dashboard</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+</head>
+<body>
+    <div id="sidebar">
+        <a href="#" onclick="showPage('traffic-monitoring')" class="sidebar-link active">Traffic Monitoring</a>
+        <a href="#" onclick="showPage('scan-results')" class="sidebar-link">Scan Results</a>
+        <a href="#" onclick="showPage('wireshark-data')" class="sidebar-link">Wireshark Data</a>
+    </div>
+
+    <div id="content">
+        <!-- Traffic Monitoring Section -->
+        <div id="traffic-monitoring" class="content-page active">
+            <h2>Traffic Monitoring</h2>
+            <select id="interfaceSelect">
+                <option value="lo" selected>lo (Local Loopback)</option>
+            </select>
+            <button onclick="startMonitoring()">Start Monitoring</button>
+            <div style="width: 500px; height: 250px;">
+                <canvas id="trafficChart"></canvas>
+            </div>
+        </div>
+
+        <!-- Suricata Scan Results Section -->
+	<div id="scan-results" class="content-page">
+	    <h2>Scan Results</h2>
+	    <button id="startScanButton" onclick="startScan()">Start Scan</button>
+	    <table id="suricataResults">
+		<thead>
+		    <tr>
+		        <th>Time</th>
+		        <th>Message</th>
+		        <th>Source IP</th>
+		        <th>Destination IP</th>
+		    </tr>
+		</thead>
+		<tbody></tbody>
+	    </table>
+	</div>
+
+
+        <!-- Wireshark Data Section -->
+        <div id="wireshark-data" class="content-page">
+            <h2>Wireshark Data</h2>
+            <select id="wiresharkInterfaceSelect">
+                <option value="lo" selected>lo (Local Loopback)</option>
+            </select>
+            <button onclick="startWireshark()">Start Wireshark</button>
+            <table id="wiresharkResults">
+                <thead>
+                    <tr>
+                        <th>#</th>
+                        <th>Source IP</th>
+                        <th>Destination IP</th>
+                        <th>Protocol</th>
+                        <th>Length</th>
+                        <th>Info</th>
+                    </tr>
+                </thead>
+                <tbody></tbody>
+            </table>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="{{ url_for('static', filename='scripts.js') }}"></script>
+</body>
+</html>
