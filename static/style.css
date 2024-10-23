@@ -1,0 +1,59 @@
+body {
+    font-family: Arial, sans-serif;
+    margin: 0;
+    display: flex;
+}
+
+#sidebar {
+    width: 200px;
+    height: 100vh;
+    background-color: #333;
+    padding-top: 20px;
+    position: fixed;
+}
+
+#sidebar a {
+    display: block;
+    color: white;
+    padding: 15px;
+    text-decoration: none;
+}
+
+#sidebar a:hover {
+    background-color: #575757;
+}
+
+#sidebar a.active {
+    background-color: #444;
+}
+
+#content {
+    margin-left: 200px;
+    padding: 20px;
+    width: calc(100% - 200px);
+}
+
+.content-page {
+    display: none;
+}
+
+.content-page.active {
+    display: block;
+}
+
+table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 20px;
+}
+
+th, td {
+    padding: 10px;
+    text-align: left;
+    border-bottom: 1px solid #ddd;
+}
+
+#trafficChart {
+    width: 100% !important;
+    height: 100% !important;
+}
