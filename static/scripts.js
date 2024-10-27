@@ -1,3 +1,4 @@
+// 網頁轉轉的程式碼
 function showPage(pageId) {
     var pages = document.getElementsByClassName('content-page');
     for (var i = 0; i < pages.length; i++) {
