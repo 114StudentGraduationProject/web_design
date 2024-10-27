@@ -1,0 +1,53 @@
+name: moduleTest
+
+on: [push]
+
+jobs:
+  build_and_deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v3
+
+      - name: Set up variables
+        run: echo "RELEASE_VERSION=v$(date +'%Y%m%d%H%M%S')" >> $GITHUB_ENV
+
+      - name: Prepare Files
+        run: |
+          mkdir release
+          cp README.md release/  # 修正拼寫
+          cp app.py release/
+          cp static/scripts.js release/
+          cp static/style.css release/
+          cp templates/index.html release/
+          zip -r release.zip release/
+
+      - name: Upload Artifact
+        uses: actions/upload-artifact@v3
+        with:
+          name: release
+          path: release.zip
+
+      - name: Check if Release exists
+        id: check_release
+        uses: octokit/request-action@v2.x
+        with:
+          route: GET /repos/:owner/:repo/releases/tags/:tag
+          owner: ${{ github.repository_owner }}
+          repo: ${{ github.event.repository.name }}
+          tag: ${{ env.RELEASE_VERSION }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        continue-on-error: true
+
+      - name: Create Release
+        if: steps.check_release.outcome == 'failure'  # 若 Release 不存在才執行
+        id: create_release
+        uses: softprops/action-gh-release@v1
+        with:
+          tag_name: ${{ env.RELEASE_VERSION }}
+          name: Release ${{ env.RELEASE_VERSION }}
+          files: release.zip
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
