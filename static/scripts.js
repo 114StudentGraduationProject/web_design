@@ -1,4 +1,3 @@
-// Toggle content visibility
 function showPage(pageId) {
     var pages = document.getElementsByClassName('content-page');
     for (var i = 0; i < pages.length; i++) {
@@ -10,8 +9,14 @@ function showPage(pageId) {
     for (var j = 0; j < links.length; j++) {
         links[j].classList.remove('active');
     }
-    document.querySelector('#sidebar a[onclick="showPage(\'' + pageId + '\')"]').classList.add('active');
+    document.querySelector('#sidebar a[data-page="' + pageId + '"]').classList.add('active');
 }
+
+// 加入事件監聽器，讓 Introduce 頁面在首次載入時顯示
+document.addEventListener('DOMContentLoaded', function() {
+    showPage('introduce');
+});
+
 
 // Fetch network interfaces and populate dropdowns
 document.addEventListener('DOMContentLoaded', function () {
@@ -104,18 +109,34 @@ const trafficChart = new Chart(ctx, {
     }
 });
 
-let scanInterval;  // To store the interval for fetching data
 
-// Function to start scanning
+//suricata_scan
+let scanInterval;
+
 function startScan() {
-    if (scanInterval) {
-        clearInterval(scanInterval);  // Clear any existing intervals to avoid duplicates
-    }
-    fetchSuricataResults();  // Fetch data immediately on button press
-    scanInterval = setInterval(fetchSuricataResults, 5000);  // Fetch data every 5 seconds
+    fetch('/start_suricata', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.status === 'success') {
+            console.log(data.message);
+            // Clear any previous interval to avoid duplicate requests
+            if (scanInterval) {
+                clearInterval(scanInterval);
+            }
+            // Start fetching results every 5 seconds
+            fetchSuricataResults();  // Fetch data immediately
+            scanInterval = setInterval(fetchSuricataResults, 5000);
+        } else {
+            console.error(data.message);
+            alert(data.message);
+        }
+    })
+    .catch(error => console.error('Error starting Suricata:', error));
 }
 
-// Fetch Suricata results every 5 seconds and limit it to 10 entries
 function fetchSuricataResults() {
     fetch('/get_scan_results')
         .then(response => response.json())
@@ -133,6 +154,7 @@ function fetchSuricataResults() {
         })
         .catch(error => console.error('Error fetching Suricata results:', error));
 }
+
 
 // Start Wireshark monitoring
 let wiresharkInterval;
@@ -174,3 +196,4 @@ function startWireshark() {
             .catch(error => console.error('Error fetching Wireshark data:', error));
     }, 1000);  // Fetch new packet data every second
 }
+
