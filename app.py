@@ -3,11 +3,16 @@ import os
 import psutil
 import subprocess
 import time
+import re  # 用於正則表達式解析 fast.log
+import signal
 
 app = Flask(__name__)
 
 # Initialize previous_data
 previous_data = {}
+suricata_process = None  # 保存 Suricata 進程的變數
+tail_process = None
+
 
 # Render homepage
 @app.route('/')
@@ -52,25 +57,47 @@ def get_network_traffic():
     else:
         return jsonify({'status': 'error', 'message': 'Invalid or missing network interface'}), 400
 
-# Get Suricata scan results 
-# Modify /get_scan_results to limit entries and display only needed fields
+# Function to start Suricata and tail fast.log
+def start_suricata(interface='eth0'):
+    global suricata_process, tail_process
+    if suricata_process is None:
+        try:
+            # Start Suricata
+            suricata_command = ['sudo', 'suricata', '-c', '/etc/suricata/suricata.yaml', '-i', interface]
+            suricata_process = subprocess.Popen(suricata_command, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+
+            # Start tail on fast.log
+            tail_command = ['sudo', 'tail', '-f', '/var/log/suricata/fast.log']
+            tail_process = subprocess.Popen(tail_command, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+
+            return {'status': 'success', 'message': 'Suricata and log tailing started'}
+        except Exception as e:
+            return {'status': 'error', 'message': f'Failed to start Suricata or tail fast.log: {str(e)}'}
+    else:
+        return {'status': 'error', 'message': 'Suricata is already running'}
+
+@app.route('/start_suricata', methods=['POST'])
+def start_suricata_endpoint():
+    response = start_suricata()
+    return jsonify(response)
+
 @app.route('/get_scan_results', methods=['GET'])
 def get_scan_results():
-    log_path = '/var/log/suricata/fast.log'  # Modify with the actual Suricata log path
+    log_path = '/var/log/suricata/fast.log'
     results = []
 
     if os.path.exists(log_path):
         try:
             with open(log_path, 'r') as file:
                 lines = file.readlines()
-                for line in lines[-10:]:  # Get only the last 10 lines
-                    parts = line.strip().split(',')
-                    if len(parts) >= 5:
+                for line in lines[-10:]:
+                    match = re.search(r'(\d{2}/\d{2}/\d{4}-\d{2}:\d{2}:\d{2}\.\d+)\s+\[\*\*\]\s+\[\d+:\d+:\d+\]\s+(.*?)\s+\[\*\*\]\s+\[.*?\]\s+\[.*?\]\s+\{(.*?)\}\s+(\d+\.\d+\.\d+\.\d+):\d+\s+->\s+(\d+\.\d+\.\d+\.\d+):\d+', line)
+                    if match:
                         results.append({
-                            'time': parts[0],
-                            'msg': parts[3],  # This should represent the message
-                            'source_ip': parts[1],
-                            'destination_ip': parts[2]
+                            'time': match.group(1),
+                            'msg': match.group(2),
+                            'source_ip': match.group(4),
+                            'destination_ip': match.group(5)
                         })
         except IOError as e:
             return jsonify({'status': 'error', 'message': f'Error reading log file: {str(e)}'}), 500
