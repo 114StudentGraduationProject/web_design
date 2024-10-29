@@ -136,5 +136,36 @@ def get_wireshark_data():
     except Exception as e:
         return jsonify({'status': 'error', 'message': str(e)}), 500
 
+# Get Error Packet data from Suricata's fast.log
+@app.route('/get_error_packet_data', methods=['GET'])
+def get_error_packet_data():
+    log_path = '/var/log/suricata/fast.log'  # 修改為您的實際 Suricata 日誌路徑
+    error_packets = []
+
+    if os.path.exists(log_path):
+        try:
+            with open(log_path, 'r') as file:
+                lines = file.readlines()
+                for line in lines[-50:]:  # 只讀取最後 50 行，以獲取最近的錯誤封包
+                    # 使用正則表達式解析 fast.log 中的錯誤封包資料
+                    match = re.search(r'(\d{2}/\d{2}/\d{4}-\d{2}:\d{2}:\d{2}\.\d+)\s+\[\*\*\]\s+\[\d+:\d+:\d+\]\s+(.*?)\s+\[\*\*\]\s+\[.*?\]\s+\[.*?\]\s+\{(.*?)\}\s+(\d+\.\d+\.\d+\.\d+):\d+\s+->\s+(\d+\.\d+\.\d+\.\d+):\d+', line)
+                    if match:
+                        error_packets.append({
+                            "time": match.group(1),    # 時間
+                            "source": match.group(4),  # 來源 IP
+                            "destination": match.group(5),  # 目標 IP
+                            "protocol": match.group(3),  # 協定
+                            "length": "N/A",  # 此處可以設計為取得真實的封包長度，如果 fast.log 中有
+                            "info": match.group(2)  # 錯誤或告警訊息
+                        })
+
+        except IOError as e:
+            return jsonify({"status": "error", "message": f"Error reading log file: {str(e)}"}), 500
+    else:
+        return jsonify({"status": "error", "message": "Log file not found"}), 404
+
+    return jsonify({"status": "success", "data": error_packets})
+    
+    
 if __name__ == '__main__':
     app.run(debug=True)
