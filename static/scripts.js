@@ -1,5 +1,3 @@
-// 網頁轉轉的程式碼
-//測試
 function showPage(pageId) {
     var pages = document.getElementsByClassName('content-page');
     for (var i = 0; i < pages.length; i++) {
@@ -198,4 +196,40 @@ function startWireshark() {
             .catch(error => console.error('Error fetching Wireshark data:', error));
     }, 1000);  // Fetch new packet data every second
 }
+
+// Start Error Packet monitoring
+let errorPacketInterval;
+let errorPacketData = [];
+
+function startErrorPacket() {
+    clearInterval(errorPacketInterval);
+
+    errorPacketInterval = setInterval(() => {
+        fetch(`/get_error_packet_data`)
+            .then(response => response.json())
+            .then(data => {
+                if (data.status === 'success') {
+                    const resultsTable = document.getElementById('errorPacketResults').getElementsByTagName('tbody')[0];
+
+                    data.data.forEach(result => {
+                        errorPacketData.unshift(result);
+
+                        if (errorPacketData.length > 15) {
+                            errorPacketData.pop();
+                        }
+                    });
+
+                    resultsTable.innerHTML = '';
+                    errorPacketData.forEach((packet, index) => {
+                        const row = resultsTable.insertRow();
+                        row.innerHTML = `<td>${index + 1}</td><td>${packet.time}</td><td>${packet.source}</td><td>${packet.destination}</td><td>${packet.protocol}</td><td>${packet.length}</td><td>${packet.info}</td>`;
+                    });
+                } else {
+                    console.error('Failed to fetch Error Packet data:', data.message);
+                }
+            })
+            .catch(error => console.error('Error fetching Error Packet data:', error));
+    }, 1000);  // Fetch new error packet data every second
+}
+
 
