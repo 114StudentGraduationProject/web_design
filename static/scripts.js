@@ -232,4 +232,29 @@ function startErrorPacket() {
     }, 1000);  // Fetch new error packet data every second
 }
 
+// Function to add a new rule to a.rules
+function addRule() {
+    const ruleInput = document.getElementById('ruleInput').value;
+    const outputResult = document.getElementById('outputResult');
+
+    fetch('/add_rule', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ rule: ruleInput })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.status === 'success') {
+            outputResult.value = "Success: The rule was added successfully.";
+        } else {
+            outputResult.value = "Error: " + data.message;
+        }
+    })
+    .catch(error => {
+        outputResult.value = "Error: Failed to add rule. " + error;
+    });
+}
+
 
