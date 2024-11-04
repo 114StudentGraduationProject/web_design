@@ -13,6 +13,7 @@
         <a href="#" onclick="showPage('scan-results')" class="sidebar-link">Scan Results</a>
         <a href="#" onclick="showPage('wireshark-data')" class="sidebar-link">Wireshark Data</a>
         <a href="#" onclick="showPage('error-packet')" class="sidebar-link" data-page="error-packet">Error Packet</a> 
+        <a href="#" onclick="showPage('add-rules')" class="sidebar-link">Add Rules</a> <!-- 新增 Add Rules 頁面 -->
     </div>
 
     <div id="content">
@@ -106,6 +107,22 @@
                 <tbody></tbody>
             </table>
         </div>
+        
+         <!-- Add Rules Section -->
+        <div id="add-rules" class="content-page">
+            <h2>Add Rules</h2>
+            <label for="ruleInput">Enter your new rule:</label><br>
+            <textarea id="ruleInput" rows="4" cols="50" placeholder="Enter Suricata rule here..."></textarea><br><br>
+            
+            <button onclick="addRule()">Add New Rule to a.rules</button><br><br>
+            
+            <label for="outputResult">Result:</label><br>
+            <textarea id="outputResult" rows="4" cols="50" readonly></textarea>
+        </div>
+
+        <!-- Other Sections (e.g., Traffic Monitoring, Scan Results, Wireshark Data, Error Packet) -->
+        <!-- existing content pages go here -->
+        
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
