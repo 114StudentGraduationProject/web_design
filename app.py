@@ -58,10 +58,19 @@ def get_network_traffic():
         return jsonify({'status': 'error', 'message': 'Invalid or missing network interface'}), 400
 
 # Function to start Suricata and tail fast.log
+# Function to start Suricata and tail fast.log with configuration validation
 def start_suricata(interface='eth0'):
     global suricata_process, tail_process
     if suricata_process is None:
         try:
+            # Test Suricata configuration first
+            test_command = ['sudo', 'suricata', '-T', '-c', '/etc/suricata/suricata.yaml']
+            test_result = subprocess.run(test_command, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
+
+            # Check if the configuration test was successful
+            if test_result.returncode != 0:
+                return {'status': 'error', 'message': f'Suricata configuration test failed: {test_result.stderr}'}
+
             # Start Suricata
             suricata_command = ['sudo', 'suricata', '-c', '/etc/suricata/suricata.yaml', '-i', interface]
             suricata_process = subprocess.Popen(suricata_command, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
@@ -70,7 +79,7 @@ def start_suricata(interface='eth0'):
             tail_command = ['sudo', 'tail', '-f', '/var/log/suricata/fast.log']
             tail_process = subprocess.Popen(tail_command, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
 
-            return {'status': 'success', 'message': 'Suricata and log tailing started'}
+            return {'status': 'success', 'message': 'Suricata configuration validated and monitoring started'}
         except Exception as e:
             return {'status': 'error', 'message': f'Failed to start Suricata or tail fast.log: {str(e)}'}
     else:
@@ -165,6 +174,46 @@ def get_error_packet_data():
         return jsonify({"status": "error", "message": "Log file not found"}), 404
 
     return jsonify({"status": "success", "data": error_packets})
+
+
+# 用於驗證 Suricata 規則格式的正則表達式
+RULE_REGEX = re.compile(r'^(alert|drop|pass|reject) (tcp|udp|icmp|ip) any any -> any any \((.*?)\)$')
+
+# Suricata rule added
+@app.route('/add_rule', methods=['POST'])
+def add_rule():
+    data = request.get_json()
+    rule = data.get("rule")
+
+    if not rule:
+        return jsonify({"status": "error", "message": "No rule provided"}), 400
+
+    # 驗證規則格式
+    if not RULE_REGEX.match(rule):
+        return jsonify({"status": "error", "message": "Invalid rule format"}), 400
+
+    try:
+        # Append the rule to a.rules
+        with open('/home/kali/Desktop/a.rules', 'a') as f:
+            f.write(rule + "\n")
+
+        # Test Suricata configuration with the new rule
+        result = subprocess.run(
+            ["sudo", "suricata", "-T", "-c", "/etc/suricata/suricata.yaml"],
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            text=True
+        )
+
+        # Check if the command was successful
+        if result.returncode == 0:
+            return jsonify({"status": "success", "message": "Rule added successfully."})
+        else:
+            # If there's an error, return the stderr output and remove the invalid rule
+            return jsonify({"status": "error", "message": result.stderr}), 500
+
+    except Exception as e:
+        return jsonify({"status": "error", "message": str(e)}), 500
     
     
 if __name__ == '__main__':
