@@ -67,7 +67,8 @@ function startMonitoring() {
                 const currentTime = new Date().toLocaleTimeString();
 
                 const totalRate = rateSent + rateRecv; // Mbps
-                
+
+                // 更新 Chart.js 圖表
                 trafficChart.data.labels.push(currentTime);
                 trafficChart.data.datasets[0].data.push(totalRate);
 
