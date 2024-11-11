@@ -36,6 +36,7 @@ def get_network_traffic():
         net_io = psutil.net_io_counters(pernic=True)[selected_interface]
         current_time = time.time()
         
+        # 初次查詢介面流量時初始化 previous_data
         if selected_interface not in previous_data:
             previous_data[selected_interface] = {
                 'bytes_sent': net_io.bytes_sent,
@@ -43,11 +44,13 @@ def get_network_traffic():
                 'time': current_time
             }
             return jsonify({'status': 'success', 'traffic_data': {'rate_sent': 0, 'rate_recv': 0}}), 200
-        
+
+        # 計算流量速率
         elapsed_time = current_time - previous_data[selected_interface]['time']
         rate_sent = (net_io.bytes_sent - previous_data[selected_interface]['bytes_sent']) * 8 / elapsed_time / 1_000_000
         rate_recv = (net_io.bytes_recv - previous_data[selected_interface]['bytes_recv']) * 8 / elapsed_time / 1_000_000
-        
+
+        # 更新 previous_data 並返回流量數據
         previous_data[selected_interface] = {
             'bytes_sent': net_io.bytes_sent,
             'bytes_recv': net_io.bytes_recv,
