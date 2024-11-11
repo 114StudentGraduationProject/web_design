@@ -71,7 +71,6 @@ function startMonitoring() {
                 // 更新 Chart.js 圖表
                 trafficChart.data.labels.push(currentTime);
                 trafficChart.data.datasets[0].data.push(totalRate);
-                trafficChart.update();
 
                 if (trafficChart.data.labels.length > 10) {
                     trafficChart.data.labels.shift();
